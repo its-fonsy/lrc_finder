@@ -8,8 +8,8 @@ const RANK_LIST_SIZE: usize = 5;
 
 #[derive(Clone)]
 pub struct SongRank {
-    song: Song,
-    score: usize,
+    pub song: Song,
+    pub score: usize,
     pub filename: String,
 }
 
@@ -69,6 +69,7 @@ impl<'a> SongRanker<'a> {
         self.ranking[pos] = item.clone();
     }
 
+    #[allow(dead_code)]
     pub fn print_rank_list(&self) {
         println!(
             "Ranking for '{}' by '{}':",

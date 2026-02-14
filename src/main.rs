@@ -73,31 +73,33 @@ fn run() -> Result<()> {
         ranker.rank(song, filename);
     }
 
-    /* Ask user to add lyric to the repository */
+    let best_match: SongRank = ranker.get_pos(1)?;
 
-    ranker.print_rank_list();
-    let mut user_answer: String = inline_dialog("Add a lyric to repository (y/N)? ")?;
-    user_confirm_or_abort!(user_answer);
-
-    /* Ask user which from the rank list */
-
-    user_answer = inline_dialog("Select position: ")?;
-    let position: usize = user_answer.parse()?;
-    let song_to_copy: SongRank = ranker.get_pos(position)?;
+    println!(
+        "The best match for '{}' by '{}' is:",
+        song_to_match.title, song_to_match.artist
+    );
+    println!();
+    println!("       Artist: {}", best_match.song.artist);
+    println!("        Title: {}", best_match.song.title);
+    println!("     Filename: {}", best_match.filename);
+    println!("   Diff score: {}", best_match.score);
+    println!();
 
     /* Set source and destination file names */
 
     let dst_lrc_folder: String = env::var(ENV_LYRIC_DIR)?.trim_end_matches('/').to_string();
-    let src_lrc_full_path: String = OLD_LYRIC_DIRECTORY.to_owned() + "/" + &song_to_copy.filename;
+    let src_lrc_full_path: String = OLD_LYRIC_DIRECTORY.to_owned() + "/" + &best_match.filename;
     let dst_lrc_full_path: String = dst_lrc_folder + "/" + song_to_match.hased_filename().as_str();
 
     /* Ask user to confirm copy */
 
-    println!("Copy");
-    println!("  source: {}", src_lrc_full_path);
-    println!("    dest: {}", dst_lrc_full_path);
+    println!("Copy the lyric from:");
+    println!("       Source: {}", src_lrc_full_path);
+    println!("  Destination: {}", dst_lrc_full_path);
+    println!();
 
-    user_answer = inline_dialog("Confirm (y/N)? ")?.to_lowercase();
+    let user_answer: String = inline_dialog("Confirm (y/N)? ")?.to_lowercase();
     user_confirm_or_abort!(user_answer);
 
     /* User confirmed, copy execute the copy */
