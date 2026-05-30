@@ -7,6 +7,7 @@ mod error;
 mod ranker;
 mod song;
 
+use clap::Parser;
 use crate::cmus::Cmus;
 use crate::error::LyricFinderError;
 use crate::ranker::{SongRank, SongRanker};
@@ -14,8 +15,14 @@ use crate::song::Song;
 
 type Result<T> = std::result::Result<T, LyricFinderError>;
 
-const OLD_LYRIC_DIRECTORY: &str = "/media/music/archive/old_lyrics";
 const ENV_LYRIC_DIR: &str = "LYRICS_DIR";
+
+/// Search for lyric files in SOURCE directory, hash and copy them to $LYRIC
+#[derive(Parser)]
+struct Cli {
+    /// Source directory of lyric files
+    source: String,
+}
 
 macro_rules! user_confirm_or_abort {
     ($ans:expr) => {
@@ -41,7 +48,7 @@ fn inline_dialog(question: &str) -> Result<String> {
     Ok(answer.trim().to_string())
 }
 
-fn run() -> Result<()> {
+fn run(source_lyric_dir: &str) -> Result<()> {
     /* Get playing songw from music player */
 
     let player: Cmus = Cmus::new()?;
@@ -53,7 +60,7 @@ fn run() -> Result<()> {
 
     /* Check every song from lyric directory */
 
-    let path: fs::ReadDir = fs::read_dir(OLD_LYRIC_DIRECTORY)?;
+    let path: fs::ReadDir = fs::read_dir(source_lyric_dir)?;
 
     for entry in path {
         let filename: String = entry?.file_name().into_string()?;
@@ -89,7 +96,7 @@ fn run() -> Result<()> {
     /* Set source and destination file names */
 
     let dst_lrc_folder: String = env::var(ENV_LYRIC_DIR)?.trim_end_matches('/').to_string();
-    let src_lrc_full_path: String = OLD_LYRIC_DIRECTORY.to_owned() + "/" + &best_match.filename;
+    let src_lrc_full_path: String = source_lyric_dir.trim_end_matches('/').to_owned() + "/" + &best_match.filename;
     let dst_lrc_full_path: String = dst_lrc_folder + "/" + song_to_match.hased_filename().as_str();
 
     /* Ask user to confirm copy */
@@ -113,7 +120,8 @@ fn run() -> Result<()> {
 }
 
 fn main() {
-    if let Err(error_message) = run() {
+    let cli = Cli::parse();
+    if let Err(error_message) = run(&cli.source) {
         eprintln!("Error: {}", error_message);
         std::process::exit(1);
     }
